@@ -4,11 +4,6 @@ from django.db import models
 
 
 class Tenant(models.Model):
-    """
-    Represents a merchant or organization on the platform.
-    Each tenant has an isolated namespace — their wallets, transactions,
-    and idempotency keys are invisible to other tenants.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
@@ -20,12 +15,6 @@ class Tenant(models.Model):
 
 
 class Wallet(models.Model):
-    """
-    A wallet belongs to a tenant and represents a single user/account.
-    The 'balance' field is a denormalized cache — the Transaction ledger
-    is the authoritative source of truth.
-    Money is stored as integer minor units (paisa / cents).
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant = models.ForeignKey(
@@ -52,11 +41,6 @@ class Wallet(models.Model):
 
 
 class Transaction(models.Model):
-    """
-    Immutable ledger entry. Every balance change creates a Transaction.
-    This is the source of truth — wallet.balance is just a cached total.
-    Transactions are never updated or deleted.
-    """
 
     class TransactionType(models.TextChoices):
         DEPOSIT = "DEPOSIT", "Deposit"
@@ -104,11 +88,6 @@ class Transaction(models.Model):
 
 
 class IdempotencyKey(models.Model):
-    """
-    Stores client-provided idempotency keys scoped per tenant.
-    When a duplicate key is received, the cached response is returned
-    instead of processing the request again.
-    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant = models.ForeignKey(

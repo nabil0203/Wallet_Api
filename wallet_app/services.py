@@ -22,7 +22,7 @@ class DuplicateIdempotencyKeyError(Exception):
         super().__init__("Duplicate idempotency key")
 
 
-def _claim_idempotency(tenant, idempotency_key):
+def claim_idempotency(tenant, idempotency_key):
     """Claim a key in the current transaction, or replay its cached response."""
     if not idempotency_key:
         return None
@@ -40,7 +40,7 @@ def _claim_idempotency(tenant, idempotency_key):
     return record
 
 
-def _save_idempotency(record, response_status, response_body):
+def save_idempotency(record, response_status, response_body):
     """Save the completed response on the key claimed by this transaction."""
     if record is None:
         return
@@ -58,7 +58,7 @@ def deposit(tenant, wallet_id, amount, idempotency_key=None):
     Records an immutable ledger entry. Idempotent via idempotency_key.
     """
     with transaction.atomic():
-        idempotency_record = _claim_idempotency(tenant, idempotency_key)
+        idempotency_record = claim_idempotency(tenant, idempotency_key)
         try:
             wallet = (
                 Wallet.objects.select_for_update()
@@ -87,7 +87,7 @@ def deposit(tenant, wallet_id, amount, idempotency_key=None):
             "balance_after": tx.balance_after,
         }
 
-        _save_idempotency(idempotency_record, 201, response_body)
+        save_idempotency(idempotency_record, 201, response_body)
 
     return tx, wallet
 
@@ -100,7 +100,7 @@ def withdraw(tenant, wallet_id, amount, idempotency_key=None):
     Records an immutable ledger entry. Idempotent via idempotency_key.
     """
     with transaction.atomic():
-        idempotency_record = _claim_idempotency(tenant, idempotency_key)
+        idempotency_record = claim_idempotency(tenant, idempotency_key)
         try:
             wallet = (
                 Wallet.objects.select_for_update()
@@ -134,27 +134,17 @@ def withdraw(tenant, wallet_id, amount, idempotency_key=None):
             "balance_after": tx.balance_after,
         }
 
-        _save_idempotency(idempotency_record, 201, response_body)
+        save_idempotency(idempotency_record, 201, response_body)
 
     return tx, wallet
 
 
 def transfer(tenant, from_wallet_id, to_wallet_id, amount, idempotency_key=None):
-    """
-    Transfer funds between two wallets of the same tenant.
-
-    - Rejects cross-tenant transfers.
-    - Rejects if sender has insufficient funds.
-    - Atomic: both sides succeed or neither does.
-    - Locks wallets in ascending ID order to prevent deadlocks.
-    - Creates two paired ledger entries (TRANSFER_OUT + TRANSFER_IN).
-    - Idempotent via idempotency_key.
-    """
     if str(from_wallet_id) == str(to_wallet_id):
         raise ValueError("Cannot transfer to the same wallet.")
 
     with transaction.atomic():
-        idempotency_record = _claim_idempotency(tenant, idempotency_key)
+        idempotency_record = claim_idempotency(tenant, idempotency_key)
         # Lock wallets in consistent order (ascending ID) to prevent deadlocks
         ordered_ids = sorted([str(from_wallet_id), str(to_wallet_id)])
 
@@ -232,6 +222,6 @@ def transfer(tenant, from_wallet_id, to_wallet_id, amount, idempotency_key=None)
             },
         }
 
-        _save_idempotency(idempotency_record, 201, response_body)
+        save_idempotency(idempotency_record, 201, response_body)
 
     return tx_out, tx_in, from_wallet, to_wallet

@@ -11,19 +11,7 @@ TENANT_EXEMPT_PATHS = [
 
 
 class TenantMiddleware(MiddlewareMixin):
-    """
-    Resolves the current tenant from the request.
-
-    The tenant can be identified by either:
-      - X-Tenant-ID header (UUID of the tenant)
-      - X-API-Key header (the tenant's API key)
-
-    On success, attaches `request.tenant` for downstream views.
-    On failure, returns 401/403 JSON error.
-    """
-
     def process_request(self, request):
-        # Skip tenant resolution for exempt paths
         for exempt_path in TENANT_EXEMPT_PATHS:
             if request.path.startswith(exempt_path):
                 return None

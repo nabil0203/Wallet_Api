@@ -3,8 +3,7 @@ from rest_framework import serializers
 from wallet_app.models import Tenant, Transaction, Wallet
 
 
-# ── Tenant ───────────────────────────────────────────────────────────────────
-
+#  Tenant
 
 class TenantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,8 +12,7 @@ class TenantSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "api_key", "created_at"]
 
 
-# ── Wallet ───────────────────────────────────────────────────────────────────
-
+#  Wallet
 
 class WalletCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,8 +28,7 @@ class WalletDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# ── Transaction ──────────────────────────────────────────────────────────────
-
+#  Transaction
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,8 +40,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-# ── Action Serializers (request bodies) ──────────────────────────────────────
-
+#  Action Serializers
 
 class MoneyActionSerializer(serializers.Serializer):
     amount = serializers.IntegerField(min_value=1, help_text="Amount in minor units (must be positive)")

@@ -18,8 +18,7 @@ from wallet_app.serializers import (
 )
 
 
-# ── Pagination ───────────────────────────────────────────────────────────────
-
+# Pagination 
 
 class TransactionPagination(PageNumberPagination):
     page_size = 20
@@ -27,8 +26,7 @@ class TransactionPagination(PageNumberPagination):
     max_page_size = 100
 
 
-# ── Tenant ViewSet ───────────────────────────────────────────────────────────
-
+#  Tenant 
 
 class TenantViewSet(CreateModelMixin, GenericViewSet):
     """
@@ -40,24 +38,15 @@ class TenantViewSet(CreateModelMixin, GenericViewSet):
     serializer_class = TenantSerializer
 
 
-# ── Wallet ViewSet ───────────────────────────────────────────────────────────
+#  Wallet ViewSet
 
 
 class WalletViewSet(
     CreateModelMixin, RetrieveModelMixin, ListModelMixin, GenericViewSet
 ):
-    """
-    CRUD for wallets scoped to the current tenant.
 
-    Endpoints:
-      POST   /api/wallets/                    → Create wallet
-      GET    /api/wallets/                    → List tenant's wallets
-      GET    /api/wallets/{id}/               → Wallet detail + balance
-      POST   /api/wallets/{id}/deposit/       → Deposit funds
-      POST   /api/wallets/{id}/withdraw/      → Withdraw funds
-      GET    /api/wallets/{id}/transactions/  → Paginated transaction history
-    """
 
+#    CRUD for wallets scoped to the current tenant.
     def get_queryset(self):
         """Filter wallets to current tenant only — enforces tenant isolation."""
         return Wallet.objects.filter(tenant=self.request.tenant)
@@ -81,7 +70,7 @@ class WalletViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    # ── Deposit ──────────────────────────────────────────────────────────
+    #  Deposit 
 
     @action(detail=True, methods=["post"], url_path="deposit")
     def deposit(self, request, pk=None):
@@ -109,7 +98,7 @@ class WalletViewSet(
             status=status.HTTP_201_CREATED,
         )
 
-    # ── Withdraw ─────────────────────────────────────────────────────────
+    #  Withdraw 
 
     @action(detail=True, methods=["post"], url_path="withdraw")
     def withdraw(self, request, pk=None):
@@ -142,11 +131,10 @@ class WalletViewSet(
             status=status.HTTP_201_CREATED,
         )
 
-    # ── Transaction History ──────────────────────────────────────────────
+    #  Transaction History
 
     @action(detail=True, methods=["get"], url_path="transactions")
     def transactions(self, request, pk=None):
-        """Paginated transaction history for a wallet."""
         # Verify wallet belongs to tenant
         try:
             wallet = Wallet.objects.get(id=pk, tenant=request.tenant)
@@ -163,16 +151,9 @@ class WalletViewSet(
         return paginator.get_paginated_response(serializer.data)
 
 
-# ── Transfer ViewSet ─────────────────────────────────────────────────────────
-
+#  Transfer ViewSet 
 
 class TransferViewSet(CreateModelMixin, GenericViewSet):
-    """
-    POST /api/transfers/ → Transfer funds between two wallets of the same tenant.
-
-    Atomic operation: both sides succeed or neither does.
-    Rejects cross-tenant transfers.
-    """
 
     serializer_class = TransferSerializer
 
